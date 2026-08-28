@@ -1251,3 +1251,29 @@ select#department-select:disabled {
   color: var(--text-main);
   font-family: var(--font-mono);
 }
+
+/* ==========================================================================
+   Geolocation Badges (GPS vs District UBIGEO)
+   ========================================================================== */
+.geo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.geo-badge-gps {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.geo-badge-nogps {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}

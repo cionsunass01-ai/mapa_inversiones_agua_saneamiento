@@ -249,9 +249,11 @@ function selectCentroPobladoPolygon(feature, layer) {
 
   const p = feature.properties;
   const ccppName = (p.name || "").trim().toLowerCase();
+  const districtName = (p.district_name || "").trim().toLowerCase();
   const ccppGeom = feature.geometry;
+  const isCapitalOrHomonymous = ccppName.length >= 3 && (ccppName === districtName || districtName.includes(ccppName));
 
-  // Filtrado EXCLUSIVO para este Centro Poblado (Intersección Espacial o Mención Textual Directa)
+  // Filtrado EXCLUSIVO para este Centro Poblado (Intersección Espacial o Mención Textual Protegida)
   const matchedProjects = currentProjects.filter(item => {
     // 1. Intersección espacial exacta: Coordenada del proyecto dentro del polígono del CCPP
     if (item.geometry && item.geometry.coordinates) {
@@ -260,11 +262,31 @@ function selectCentroPobladoPolygon(feature, layer) {
         return true;
       }
     }
-    // 2. Mención textual directa al nombre del Centro Poblado en el título del proyecto
+    // 2. Mención textual directa protegida al nombre del Centro Poblado
     if (ccppName.length >= 4) {
       const projName = (item.properties?.name || "").toLowerCase();
-      if (projName.includes(ccppName)) {
-        return true;
+      if (isCapitalOrHomonymous) {
+        // En capitales distritales homónimas (ej. CP Arancay en Distrito Arancay), 
+        // no buscar la palabra suelta porque coincide con "distrito de arancay".
+        // Exigir mención explícita a la entidad local o centro poblado:
+        const explicitPatterns = [
+          `centro poblado de ${ccppName}`,
+          `centro poblado ${ccppName}`,
+          `c.p. de ${ccppName}`,
+          `c.p. ${ccppName}`,
+          `cp ${ccppName}`,
+          `c.p.m. ${ccppName}`,
+          `localidad de ${ccppName}`,
+          `localidad ${ccppName}`,
+          `ciudad de ${ccppName}`,
+          `pueblo de ${ccppName}`,
+          `barrio ${ccppName}`,
+          `sector ${ccppName}`
+        ];
+        return explicitPatterns.some(pat => projName.includes(pat));
+      } else {
+        // En centros poblados rurales / no capitales (ej. Huayllacancha, Querobamba, Huampoy)
+        return projName.includes(ccppName);
       }
     }
     return false;
@@ -988,15 +1010,21 @@ function projectCard(project, index = null) {
     rankBadge = `<span class="rank-badge ${rankClass}" title="Ranking #${rankNum} por costo de inversión">#${rankNum}</span>`;
   }
 
+  const hasGps = project.has_gps !== false && (project.has_gps === true || (project.geometry && project.geometry.coordinates));
+  const geoBadge = hasGps 
+    ? `<span class="geo-badge geo-badge-gps" title="Proyecto con coordenadas georreferenciadas en el MEF (Punto en mapa)">📍 Geolocalizado</span>`
+    : `<span class="geo-badge geo-badge-nogps" title="Este proyecto no tiene coordenadas GPS en la base oficial del MEF (Asignado por UBIGEO)">🏷️ Sin coordenadas GPS</span>`;
+
   return `
     <article class="project-card">
       <div class="project-card-header">
-        <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
           ${rankBadge}
           <span class="cui-chip" onclick="copyCUI('${escapeHtml(project.cui)}', this)" title="Clic para copiar CUI">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             CUI: ${escapeHtml(project.cui)}
           </span>
+          ${geoBadge}
         </div>
         <span class="badge-status-pill ${statusClass}">
           ${escapeHtml(project.physical_status || "Sin estado")}

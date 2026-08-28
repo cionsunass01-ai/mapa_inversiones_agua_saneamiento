@@ -22,6 +22,7 @@ class ProjectSerializer(GeoFeatureModelSerializer):
     programmed_year_1 = serializers.DecimalField(source='prog_year_1', max_digits=15, decimal_places=2, read_only=True)
     programmed_year_2 = serializers.DecimalField(source='prog_year_2', max_digits=15, decimal_places=2, read_only=True)
     programmed_year_3 = serializers.DecimalField(source='prog_year_3', max_digits=15, decimal_places=2, read_only=True)
+    has_gps = serializers.SerializerMethodField()
     coordinate_type = serializers.SerializerMethodField()
 
     class Meta:
@@ -32,13 +33,12 @@ class ProjectSerializer(GeoFeatureModelSerializer):
     def get_geometry(self, obj):
         if obj.geometry:
             return obj.geometry
-        if obj.district and obj.district.geometry:
-            return obj.district.geometry.centroid
         return None
+
+    def get_has_gps(self, obj):
+        return obj.geometry is not None
 
     def get_coordinate_type(self, obj):
         if obj.geometry:
             return "Coordenada exacta MEF"
-        if obj.district:
-            return "Centroide distrital"
-        return "Sin coordenada"
+        return "Sin coordenada GPS"
