@@ -2,3 +2,10 @@ Django>=4.2,<5.0
 psycopg2-binary>=2.9
 djangorestframework>=3.14
 django-cors-headers>=4.3
+djangorestframework
+djangorestframework-gis
+django-filter
+pandas
+openpyxl
+geopandas
+shapely

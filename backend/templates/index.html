@@ -1,0 +1,85 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mapa de inversiones de agua y saneamiento</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="{% static 'app.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">UNAS · Plataforma territorial</p>
+      <h1>Inversiones de agua y saneamiento</h1>
+    </div>
+    <label class="department-picker">
+      <span>Departamento</span>
+      <select id="department-select" disabled>
+        <option>Cargando...</option>
+      </select>
+    </label>
+  </header>
+
+  <main class="layout">
+    <section class="map-card">
+      <div id="map" aria-label="Mapa de inversiones"></div>
+      <div class="map-layer-control leaflet-control">
+        <button id="layer-control-toggle" class="layer-control-toggle" type="button" aria-expanded="false" aria-controls="layer-control-panel" title="Mostrar u ocultar capas">
+          <span aria-hidden="true">▱</span><span class="sr-only">Mostrar u ocultar capas</span>
+        </button>
+        <div id="layer-control-panel" class="layer-control-panel" hidden>
+          <div class="layer-control-title">Capas</div>
+          <label class="layer-option"><input type="checkbox" id="project-toggle" checked> Proyectos de inversión</label>
+          <label class="layer-option"><input type="checkbox" id="district-toggle" checked> Distritos</label>
+          <label class="layer-option"><input type="checkbox" id="service-area-toggle"> Ámbitos de prestación EPS</label>
+          <label class="layer-option"><input type="checkbox" id="continuity-point-toggle"> Puntos de continuidad</label>
+          <label class="layer-option"><input type="checkbox" id="continuity-area-toggle"> Áreas de continuidad</label>
+        </div>
+      </div>
+      <section id="map-info-panel" class="map-overlay map-info-panel" aria-label="Resumen departamental">
+        <h2>Agua y Saneamiento (<span id="map-info-department">—</span>)</h2>
+        <div><b>Total de proyectos:</b> <span id="map-info-projects">—</span></div>
+        <div><b>Inversión total referencial:</b> <span id="map-info-investment">—</span></div>
+        <div><b>Presupuesto ejecutado acumulado:</b> <span id="map-info-executed">—</span></div>
+      </section>
+      <section class="map-overlay concentration-legend" aria-label="Leyenda de concentración de inversión">
+        <h2>Concentración de inversión</h2>
+        <div class="concentration-gradient" aria-hidden="true"></div>
+        <div class="concentration-labels"><span>Menos<br>inversión</span><span>Más<br>inversión</span></div>
+      </section>
+      <section class="map-overlay continuity-legend" aria-label="Leyenda de continuidad relativa por EPS">
+        <div class="continuity-legend-values"><span>0.0</span><span>0.5</span><span>1.0</span></div>
+        <div class="continuity-gradient" aria-hidden="true"></div>
+        <div class="continuity-legend-title">Continuidad relativa por EPS (0=Mínimo, 1=Máximo)</div>
+      </section>
+      <div id="map-status" class="map-status">Cargando información...</div>
+    </section>
+
+    <aside class="sidebar">
+      <div id="selection-header" class="selection-header" hidden>
+        <h2 id="selection-title"></h2>
+        <div id="selection-subtitle" class="muted"></div>
+      </div>
+      <div id="summary" class="summary-grid">
+        <div class="metric"><span>Total proyectos</span><strong>—</strong></div>
+        <div class="metric"><span>Inversión</span><strong>—</strong></div>
+        <div class="metric"><span>Ejecutado</span><strong>—</strong></div>
+        <div class="metric"><span>Con ubicación</span><strong>—</strong></div>
+      </div>
+      <div class="panel-block">
+        <h2>Estado del avance físico</h2>
+        <div id="status-list" class="status-list"></div>
+      </div>
+      <div class="panel-block">
+        <h2>Detalle</h2>
+        <div id="detail" class="detail muted">Selecciona un distrito o proyecto en el mapa.</div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="{% static 'app.js' %}"></script>
+</body>
+</html>

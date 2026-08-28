@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.gis.gdal import DataSource, SpatialReference, CoordTransform
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from django.utils.text import slugify
+from django.contrib.gis.db.models import Union
 from django.db import transaction
 from apps.catalogo.models import Department, Province, District
 
@@ -108,6 +109,24 @@ class Command(BaseCommand):
                     except Exception as e:
                         self.stdout.write(self.style.ERROR(f'Error en feature (posiblemente CUI/UBIGEO inválido): {e}'))
                         stats['errors'] += 1
+
+                self.stdout.write(self.style.SUCCESS('Procesando uniones espaciales para Provincias y Departamentos...'))
+                if not dry_run:
+                    for prov in Province.objects.all():
+                        geom = District.objects.filter(province=prov).aggregate(union=Union('geometry'))['union']
+                        if geom:
+                            if isinstance(geom, Polygon):
+                                geom = MultiPolygon(geom)
+                            prov.geometry = geom
+                            prov.save()
+
+                    for dep in Department.objects.all():
+                        geom = Province.objects.filter(department=dep).aggregate(union=Union('geometry'))['union']
+                        if geom:
+                            if isinstance(geom, Polygon):
+                                geom = MultiPolygon(geom)
+                            dep.geometry = geom
+                            dep.save()
 
                 if dry_run:
                     self.stdout.write(self.style.NOTICE('Modo --dry-run activo. Deshaciendo cambios...'))

@@ -1,0 +1,356 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plataforma Territorial · Inversiones de Agua y Saneamiento</title>
+  
+  <!-- Typography: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- MapLibre GL CSS for MapTiler Custom Vector Map -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="{% static 'app.css' %}?v=5">
+</head>
+<body>
+  <!-- Top Bar / Navigation -->
+  <header class="topbar">
+    <div class="brand-container">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-eyebrow">
+          <span class="badge-dot"></span>
+          <span>SUNASS · PLATAFORMA TERRITORIAL</span>
+        </div>
+        <h1 class="brand-title">Inversiones de Agua y Saneamiento</h1>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <div class="department-picker-wrapper">
+        <label for="department-select" class="picker-label">Ámbito Departamental</label>
+        <div class="select-container">
+          <svg class="select-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <select id="department-select" disabled aria-label="Seleccionar departamento">
+            <option>Cargando departamentos...</option>
+          </select>
+          <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Layout -->
+  <main class="layout">
+    <!-- Left Sidebar: KPIs, Capas y Leyendas -->
+    <aside class="left-sidebar" aria-label="Panel de capas y resumen">
+      <!-- Resumen Departamental -->
+      <section id="map-info-panel" class="panel-section dept-summary-card" aria-label="Resumen departamental">
+        <div class="section-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          <h2>Resumen: <span id="map-info-department" class="text-primary">—</span></h2>
+        </div>
+        
+        <div class="kpi-stack">
+          <div class="kpi-card">
+            <span class="kpi-label">Proyectos Registrados</span>
+            <strong id="map-info-projects" class="kpi-value">—</strong>
+          </div>
+          <div class="kpi-card highlight-cyan">
+            <span class="kpi-label">Inversión Total Referencial</span>
+            <strong id="map-info-investment" class="kpi-value font-mono">—</strong>
+          </div>
+          <div class="kpi-card highlight-emerald">
+            <span class="kpi-label">Presupuesto Devengado</span>
+            <strong id="map-info-executed" class="kpi-value font-mono">—</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Control de Capas Geoespaciales -->
+      <section class="panel-section layer-control-section">
+        <div class="section-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          <h2>Capas Cartográficas</h2>
+        </div>
+        
+        <div class="layer-list">
+          <div class="washout-control-card">
+            <div class="washout-header">
+              <span class="washout-title">
+                <span class="layer-indicator dot-spotlight"></span>
+                <span>Atenuación Externa (Tableau / CARTO)</span>
+              </span>
+              <span id="washout-val" class="washout-val font-mono">85%</span>
+            </div>
+            <div class="washout-slider-row">
+              <input type="range" id="washout-slider" min="0" max="100" value="85" step="5" class="washout-slider" aria-label="Nivel de atenuación externa">
+            </div>
+          </div>
+
+          <label class="custom-switch-label">
+            <span class="layer-info">
+              <span class="layer-indicator dot-orange"></span>
+              <span class="layer-name">Proyectos de Inversión</span>
+            </span>
+            <input type="checkbox" id="project-toggle" checked>
+            <span class="switch-slider"></span>
+          </label>
+
+          <label class="custom-switch-label">
+            <span class="layer-info">
+              <span class="layer-indicator dot-blue"></span>
+              <span class="layer-name">Límites Distritales</span>
+            </span>
+            <input type="checkbox" id="district-toggle" checked>
+            <span class="switch-slider"></span>
+          </label>
+
+          <label class="custom-switch-label">
+            <span class="layer-info">
+              <span class="layer-indicator dot-teal"></span>
+              <span class="layer-name">Ámbitos de Prestación EPS</span>
+            </span>
+            <input type="checkbox" id="service-area-toggle">
+            <span class="switch-slider"></span>
+          </label>
+
+          <label class="custom-switch-label">
+            <span class="layer-info">
+              <span class="layer-indicator dot-yellow"></span>
+              <span class="layer-name">Puntos de Continuidad</span>
+            </span>
+            <input type="checkbox" id="continuity-point-toggle">
+            <span class="switch-slider"></span>
+          </label>
+
+          <label class="custom-switch-label">
+            <span class="layer-info">
+              <span class="layer-indicator dot-green"></span>
+              <span class="layer-name">Áreas de Continuidad (Voronoi)</span>
+            </span>
+            <input type="checkbox" id="continuity-area-toggle">
+            <span class="switch-slider"></span>
+          </label>
+
+          <label class="custom-switch-label">
+            <span class="layer-info">
+              <span class="layer-indicator dot-bivariate"></span>
+              <span class="layer-name">Estrés Hídrico 2050 (WRI Aqueduct)</span>
+            </span>
+            <input type="checkbox" id="water-stress-toggle">
+            <span class="switch-slider"></span>
+          </label>
+
+          <label class="custom-switch-label">
+            <span class="layer-info">
+              <span class="layer-indicator dot-purple"></span>
+              <span class="layer-name">Centros Poblados (GeoPerú)</span>
+            </span>
+            <input type="checkbox" id="ccpp-toggle">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Leyendas Temáticas -->
+      <section class="panel-section legends-section">
+        <div class="section-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <h2>Simbología</h2>
+        </div>
+
+        <div class="legend-box">
+          <div class="legend-title">Concentración Inversión Distrital</div>
+          <div class="concentration-gradient" aria-hidden="true"></div>
+          <div class="concentration-labels">
+            <span>Menor inversión</span>
+            <span>Mayor inversión</span>
+          </div>
+        </div>
+
+        <div class="legend-box">
+          <div class="legend-title">Continuidad de Servicio EPS (Horas/Día)</div>
+          <div class="continuity-gradient" aria-hidden="true"></div>
+          <div class="continuity-legend-values">
+            <span>0.0 (Mín)</span>
+            <span>0.5</span>
+            <span>1.0 (Máx)</span>
+          </div>
+        </div>
+
+        <!-- Matriz Bivariada 4x4 WRI Aqueduct -->
+        <div id="bivariate-legend-box" class="legend-box" hidden>
+          <div class="legend-title">Matriz Bivariada 4×4 · Estrés Hídrico 2050</div>
+          
+          <p class="bivariate-intro-desc">
+            Modela el balance entre la <b>Demanda</b> (extracción y consumo) vs. la <b>Oferta</b> (caudal y disponibilidad natural) al 2050 (WRI Aqueduct 4.0 BAU).
+          </p>
+
+          <div class="bivariate-legend-wrap">
+            <div class="bivariate-y-axis">
+              <span>▲ Demanda de Agua (2050)</span>
+            </div>
+            <div class="bivariate-matrix-grid">
+              <!-- Fila 4 (Alta Demanda) -->
+              <div class="bivar-cell" style="background:#8c0172;" data-bivar="13" title="Clase 13: Estrés Crítico (Demanda Alta / Oferta Baja)"></div>
+              <div class="bivar-cell" style="background:#780172;" data-bivar="14" title="Clase 14: Demanda Alta / Oferta Media-Baja"></div>
+              <div class="bivar-cell" style="background:#492664;" data-bivar="15" title="Clase 15: Demanda Alta / Oferta Media-Alta"></div>
+              <div class="bivar-cell" style="background:#0f2f55;" data-bivar="16" title="Clase 16: Alto Caudal y Uso (Demanda Alta / Oferta Alta)"></div>
+              
+              <!-- Fila 3 -->
+              <div class="bivar-cell" style="background:#be64ac;" data-bivar="9" title="Clase 9: Demanda Media-Alta / Oferta Baja"></div>
+              <div class="bivar-cell" style="background:#9c64a3;" data-bivar="10" title="Clase 10: Demanda Media-Alta / Oferta Media-Baja"></div>
+              <div class="bivar-cell" style="background:#5a648b;" data-bivar="11" title="Clase 11: Demanda Media-Alta / Oferta Media-Alta"></div>
+              <div class="bivar-cell" style="background:#1b4c6e;" data-bivar="12" title="Clase 12: Demanda Media-Alta / Oferta Alta"></div>
+              
+              <!-- Fila 2 -->
+              <div class="bivar-cell" style="background:#dfb0d6;" data-bivar="5" title="Clase 5: Demanda Media-Baja / Oferta Baja"></div>
+              <div class="bivar-cell" style="background:#b5b0be;" data-bivar="6" title="Clase 6: Demanda Media-Baja / Oferta Media-Baja"></div>
+              <div class="bivar-cell" style="background:#6c94a3;" data-bivar="7" title="Clase 7: Demanda Media-Baja / Oferta Media-Alta"></div>
+              <div class="bivar-cell" style="background:#225474;" data-bivar="8" title="Clase 8: Demanda Media-Baja / Oferta Alta"></div>
+              
+              <!-- Fila 1 (Baja Demanda) -->
+              <div class="bivar-cell" style="background:#e8e8e8;" data-bivar="1" title="Clase 1: Bajo Uso y Aridez (Demanda Baja / Oferta Baja)"></div>
+              <div class="bivar-cell" style="background:#b8d6be;" data-bivar="2" title="Clase 2: Demanda Baja / Oferta Media-Baja"></div>
+              <div class="bivar-cell" style="background:#73b3a3;" data-bivar="3" title="Clase 3: Demanda Baja / Oferta Media-Alta"></div>
+              <div class="bivar-cell" style="background:#2a5674;" data-bivar="4" title="Clase 4: Abundancia Hídrica (Demanda Baja / Oferta Alta)"></div>
+            </div>
+          </div>
+          <div class="bivariate-x-axis">
+            <span>Oferta / Disponibilidad (2050) ▶</span>
+          </div>
+
+          <!-- Guía Explicativa de Cuadrantes -->
+          <div class="bivariate-quadrants-guide">
+            <div class="bivar-guide-item">
+              <span class="bivar-guide-swatch" style="background:#8c0172;"></span>
+              <div>
+                <strong>🔴 Estrés Crítico (Alta Demanda, Baja Oferta)</strong>
+                <p>Déficit hídrico severo y máxima vulnerabilidad de abastecimiento.</p>
+              </div>
+            </div>
+            <div class="bivar-guide-item">
+              <span class="bivar-guide-swatch" style="background:#0f2f55;"></span>
+              <div>
+                <strong>🟣 Alto Caudal y Uso (Alta Demanda, Alta Oferta)</strong>
+                <p>Alta actividad económica con suficiente disponibilidad natural.</p>
+              </div>
+            </div>
+            <div class="bivar-guide-item">
+              <span class="bivar-guide-swatch" style="background:#2a5674;"></span>
+              <div>
+                <strong>🔵 Abundancia Hídrica (Baja Demanda, Alta Oferta)</strong>
+                <p>Cuencas con excedente hídrico y baja presión de consumo.</p>
+              </div>
+            </div>
+            <div class="bivar-guide-item">
+              <span class="bivar-guide-swatch" style="background:#e8e8e8; border:1px solid #cbd5e1;"></span>
+              <div>
+                <strong>⚪ Bajo Uso / Aridez (Baja Demanda, Baja Oferta)</strong>
+                <p>Bajo caudal pero con mínima presión de demanda.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Center Stage: Map View -->
+    <section class="map-card" aria-label="Visor geoespacial">
+      <div id="map" aria-label="Mapa de inversiones de agua y saneamiento"></div>
+      
+      <!-- Quick map controls overlay -->
+      <div class="map-floating-controls">
+        <button id="btn-fit-bounds" class="map-tool-btn" type="button" title="Restablecer vista departamental">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M12 3v18M8 8l8 8M16 8l-8 8"/></svg>
+          <span>Enfocar</span>
+        </button>
+      </div>
+
+      <div id="map-status" class="map-status">
+        <span class="status-spinner"></span>
+        <span id="map-status-text">Cargando capas geoespaciales...</span>
+      </div>
+    </section>
+
+    <!-- Right Sidebar: Inspector & Project Workbench -->
+    <aside class="sidebar" aria-label="Panel de detalle e inspección">
+      <div id="selection-header" class="selection-header" hidden>
+        <div class="selection-badge">DISTRITO SELECCIONADO</div>
+        <h2 id="selection-title">Nombre del Distrito</h2>
+        <div id="selection-subtitle" class="selection-meta"></div>
+      </div>
+
+      <!-- District / Selection KPI Grid -->
+      <div id="summary" class="summary-grid">
+        <div class="metric">
+          <span class="metric-label">Proyectos</span>
+          <strong class="font-mono">—</strong>
+        </div>
+        <div class="metric highlight-cyan">
+          <span class="metric-label">Inversión (S/)</span>
+          <strong class="font-mono">—</strong>
+        </div>
+        <div class="metric highlight-emerald">
+          <span class="metric-label">Ejecutado (S/)</span>
+          <strong class="font-mono">—</strong>
+        </div>
+        <div class="metric highlight-amber">
+          <span class="metric-label">Georreferenciados</span>
+          <strong class="font-mono">—</strong>
+        </div>
+      </div>
+
+      <!-- Physical Progress Breakdown -->
+      <div class="panel-block">
+        <div class="block-header">
+          <h3>Reporte de Avance Físico</h3>
+        </div>
+        <div id="status-list" class="status-list"></div>
+      </div>
+
+      <!-- Project List / Detailed View -->
+      <div class="panel-block">
+        <div class="block-header project-search-header">
+          <h3>Proyectos de Inversión</h3>
+          <div id="project-filter-container" hidden>
+            <input type="text" id="project-search-input" class="project-search-input" placeholder="Filtrar por CUI o nombre..." aria-label="Filtrar proyectos">
+          </div>
+        </div>
+        <div id="detail" class="detail">
+          <div class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+            <p class="empty-title">Exploración Territorial</p>
+            <p class="empty-desc">Haz clic en un distrito o proyecto en el mapa para inspeccionar sus costos, avance de obra y programación multianual.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Leaflet JS, MapLibre GL JS & Leaflet-MapLibre Adapter -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.21/leaflet-maplibre-gl.js"></script>
+  <script src="{% static 'app.js' %}?v=23"></script>
+</body>
+</html>

@@ -5,6 +5,7 @@ class Department(models.Model):
     name = models.CharField(max_length=100, verbose_name="Nombre")
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     is_active = models.BooleanField(default=True, verbose_name="Activo")
+    geometry = models.MultiPolygonField(srid=4326, null=True, blank=True, verbose_name="Geometría")
 
     class Meta:
         db_table = 'catalogo_department'
@@ -19,6 +20,7 @@ class Province(models.Model):
     code = models.CharField(max_length=4, unique=True, verbose_name="Código de Provincia")
     name = models.CharField(max_length=100, verbose_name="Nombre")
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='provinces', verbose_name="Departamento")
+    geometry = models.MultiPolygonField(srid=4326, null=True, blank=True, verbose_name="Geometría")
 
     class Meta:
         db_table = 'catalogo_province'

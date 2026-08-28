@@ -15,9 +15,13 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media/
-static/
+
+# Datasets & Staging Binaries
+data/staging/
+data/processed/
 
 # Archivos temporales y de SO
+.agents/
 .DS_Store
 .DS_Store?
 ._*

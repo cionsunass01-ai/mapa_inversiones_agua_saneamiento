@@ -1,5 +1,6 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.views.generic import TemplateView
 from django.http import JsonResponse
 
 from django.db import connection
@@ -18,6 +19,10 @@ def health_check(request):
     return JsonResponse({"status": status, "database": db_status})
 
 urlpatterns = [
+    path('', TemplateView.as_view(template_name='mapa.html'), name='visor'),
     path('admin/', admin.site.urls),
     path('health/', health_check),
+    path('api/v1/catalogo/', include('apps.catalogo.urls')),
+    path('api/v1/inversiones/', include('apps.inversiones.urls')),
+    path('api/v1/capas/', include('apps.capas.urls')),
 ]
