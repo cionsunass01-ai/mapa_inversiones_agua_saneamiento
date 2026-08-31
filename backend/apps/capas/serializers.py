@@ -44,13 +44,17 @@ class WaterStressBasinSerializer(GeoFeatureModelSerializer):
         )
 
 class CentroPobladoSerializer(GeoFeatureModelSerializer):
+    monto_planificado = serializers.DecimalField(source='total_investment', max_digits=20, decimal_places=2, read_only=True)
+    monto_invertido = serializers.DecimalField(source='total_executed', max_digits=20, decimal_places=2, read_only=True)
+
     class Meta:
         model = CentroPoblado
         geo_field = 'geometry'
         fields = (
             'id', 'cod_ccpp', 'name', 'province_name', 'district_name', 
             'district_ubigeo', 'pob_total', 'num_viv', 'pvs_agua_red', 
-            'pvs_sin_saneamiento', 'department'
+            'pvs_sin_saneamiento', 'total_projects', 'total_investment', 
+            'total_executed', 'monto_planificado', 'monto_invertido', 'department'
         )
 
 

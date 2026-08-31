@@ -108,6 +108,11 @@ class CentroPoblado(models.Model):
     pvs_agua_red = models.FloatField("% agua red pública", null=True, blank=True)
     pvs_sin_saneamiento = models.FloatField("% sin saneamiento", null=True, blank=True)
     
+    # Inversión pública agregada (MEF)
+    total_projects = models.IntegerField("total proyectos", default=0)
+    total_investment = models.DecimalField("monto planificado", max_digits=20, decimal_places=2, default=0.00)
+    total_executed = models.DecimalField("monto invertido", max_digits=20, decimal_places=2, default=0.00)
+    
     # Geometrías
     point = models.PointField("punto centroide", srid=4326, null=True, blank=True)
     geometry = models.MultiPolygonField("polígono de centro poblado", srid=4326)

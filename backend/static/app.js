@@ -217,11 +217,15 @@ function onCentroPoblado(feature, layer) {
 
   const agua = p.pvs_agua_red != null ? `${Number(p.pvs_agua_red).toFixed(1)}%` : "—";
   const saneamiento = p.pvs_sin_saneamiento != null ? `${Number(p.pvs_sin_saneamiento).toFixed(1)}%` : "—";
+  const invertido = money(p.monto_invertido ?? p.total_executed);
+  const planificado = money(p.monto_planificado ?? p.total_investment);
+  const projs = p.total_projects || 0;
+
   const content = `
     <div class="map-tooltip">
       <div class="tooltip-title">
         <span>${escapeHtml(p.name || "Centro Poblado")}</span>
-        <span class="badge-status-pill good">CCPP</span>
+        <span class="badge-status-pill ${projs > 0 ? 'good' : 'muted'}">${projs > 0 ? `${projs} Proy.` : 'CCPP'}</span>
       </div>
       <div class="tooltip-row"><span>Distrito:</span><strong>${escapeHtml(p.district_name || "—")}</strong></div>
       <div class="tooltip-row"><span>Provincia:</span><strong>${escapeHtml(p.province_name || "—")}</strong></div>
@@ -229,6 +233,8 @@ function onCentroPoblado(feature, layer) {
       <div class="tooltip-row"><span>Viviendas:</span><strong>${number(p.num_viv)}</strong></div>
       <div class="tooltip-row"><span>Agua Red Pública:</span><strong class="text-primary">${agua}</strong></div>
       <div class="tooltip-row"><span>Sin Saneamiento:</span><strong class="text-danger">${saneamiento}</strong></div>
+      <div class="tooltip-row"><span>Monto Invertido:</span><strong class="text-success">${invertido}</strong></div>
+      <div class="tooltip-row"><span>Monto Planificado:</span><strong class="text-primary">${planificado}</strong></div>
       <div class="tooltip-click-hint">👆 Haz clic para filtrar y rankear proyectos</div>
     </div>
   `;
@@ -343,6 +349,8 @@ function selectCentroPobladoPolygon(feature, layer) {
           <div class="diagnostico-row"><span>Total viviendas:</span><strong>${number(p.num_viv)}</strong></div>
           <div class="diagnostico-row"><span>Cobertura red pública:</span><strong class="text-primary">${agua}</strong></div>
           <div class="diagnostico-row"><span>Déficit saneamiento:</span><strong class="text-danger">${sinSaneamiento}</strong></div>
+          <div class="diagnostico-row"><span>Monto invertido:</span><strong class="text-success">${money(p.monto_invertido ?? p.total_executed)}</strong></div>
+          <div class="diagnostico-row"><span>Monto planificado:</span><strong class="text-primary">${money(p.monto_planificado ?? p.total_investment)}</strong></div>
         </div>
       </div>
     `;
