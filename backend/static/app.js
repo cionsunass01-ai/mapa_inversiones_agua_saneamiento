@@ -183,13 +183,23 @@ function isPointInFeatureGeometry(point, geom) {
   return false;
 }
 
+function ccppInvestmentColor(value) {
+  if (!value || value <= 0) return "#f8fafc";
+  if (!maxCcppInvestment || maxCcppInvestment <= 0) return "#bae6fd";
+  const ratio = Math.sqrt(Math.max(0, value) / maxCcppInvestment);
+  const index = Math.min(concentrationColors.length - 1, Math.max(1, Math.floor(ratio * concentrationColors.length)));
+  return concentrationColors[index];
+}
+
 function ccppPolygonStyle(feature) {
+  const inv = Number(feature.properties?.total_investment ?? feature.properties?.monto_planificado ?? 0);
+  const projs = feature.properties?.total_projects || 0;
   return {
-    color: "#6d28d9",
-    weight: 1.5,
-    opacity: 0.85,
-    fillColor: "#8b5cf6",
-    fillOpacity: 0.28
+    color: "#0369a1",
+    weight: 1.2,
+    opacity: 0.75,
+    fillColor: projs > 0 && inv > 0 ? ccppInvestmentColor(inv) : "#f8fafc",
+    fillOpacity: projs > 0 && inv > 0 ? 0.65 : 0.20
   };
 }
 
@@ -199,12 +209,12 @@ function onCentroPoblado(feature, layer) {
   const p = feature.properties;
   layer.on({
     mouseover: () => {
-      layer.setStyle({ weight: 3, color: "#3b0764", fillColor: "#7c3aed", fillOpacity: 0.60 });
+      layer.setStyle({ weight: 2.8, color: "#0f172a", fillOpacity: 0.85 });
       layer.bringToFront();
     },
     mouseout: () => {
       if (layer === selectedCcppLayer) {
-        layer.setStyle({ weight: 3.5, color: "#3b0764", fillColor: "#6d28d9", fillOpacity: 0.65 });
+        layer.setStyle({ weight: 3.2, color: "#0f172a", fillOpacity: 0.85 });
       } else {
         ccppLayer.resetStyle(layer);
       }
@@ -250,7 +260,7 @@ function selectCentroPobladoPolygon(feature, layer) {
     ccppLayer.resetStyle(selectedCcppLayer);
   }
   selectedCcppLayer = layer;
-  layer.setStyle({ weight: 3.5, color: "#3b0764", fillColor: "#6d28d9", fillOpacity: 0.65 });
+  layer.setStyle({ weight: 3.2, color: "#0f172a", fillOpacity: 0.90 });
   layer.bringToFront();
 
   const p = feature.properties;
@@ -458,6 +468,7 @@ let departmentStats = { projects: 0 };
 let currentProjects = [];
 let currentSelectedDistrictProjects = [];
 let maxDistrictInvestment = 0;
+let maxCcppInvestment = 0;
 let selectedDistrictLayer = null;
 let currentDepartmentBounds = null;
 
@@ -1159,6 +1170,7 @@ async function loadDepartment(slug, updateUrl = true) {
     
     selectedDistrictLayer = null;
     maxDistrictInvestment = Math.max(0, ...(districts.features || []).map((item) => Number(item.properties?.total_investment || 0)));
+    maxCcppInvestment = Math.max(0, ...(centrosPoblados.features || []).map((item) => Number(item.properties?.total_investment || item.properties?.monto_planificado || 0)));
     
     // ---------------------------------------------------------
     // TABLEAU / CARTO STYLE WASHOUT MASK & OUTLINE
