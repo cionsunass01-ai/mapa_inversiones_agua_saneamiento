@@ -187,19 +187,20 @@ function ccppInvestmentColor(value) {
   if (!value || value <= 0) return "#f8fafc";
   if (!maxCcppInvestment || maxCcppInvestment <= 0) return "#bae6fd";
   const ratio = Math.sqrt(Math.max(0, value) / maxCcppInvestment);
-  const index = Math.min(concentrationColors.length - 1, Math.max(1, Math.floor(ratio * concentrationColors.length)));
+  const index = Math.min(concentrationColors.length - 1, Math.max(0, Math.floor(ratio * concentrationColors.length)));
   return concentrationColors[index];
 }
 
 function ccppPolygonStyle(feature) {
   const inv = Number(feature.properties?.total_investment ?? feature.properties?.monto_planificado ?? 0);
   const projs = feature.properties?.total_projects || 0;
+  const hasInv = projs > 0 && inv > 0;
   return {
-    color: "#0369a1",
-    weight: 1.2,
-    opacity: 0.75,
-    fillColor: projs > 0 && inv > 0 ? ccppInvestmentColor(inv) : "#f8fafc",
-    fillOpacity: projs > 0 && inv > 0 ? 0.65 : 0.20
+    color: hasInv ? "#0369a1" : "#94a3b8",
+    weight: hasInv ? 1.2 : 0.75,
+    opacity: hasInv ? 0.85 : 0.40,
+    fillColor: hasInv ? ccppInvestmentColor(inv) : "#f8fafc",
+    fillOpacity: hasInv ? 0.70 : 0.18
   };
 }
 
@@ -209,14 +210,20 @@ function onCentroPoblado(feature, layer) {
   const p = feature.properties;
   layer.on({
     mouseover: () => {
-      layer.setStyle({ weight: 2.8, color: "#0f172a", fillOpacity: 0.85 });
+      layer.setStyle({ weight: 2.8, color: "#0f172a", fillOpacity: 0.90 });
       layer.bringToFront();
+      updateMapInfo(p, true);
     },
     mouseout: () => {
       if (layer === selectedCcppLayer) {
-        layer.setStyle({ weight: 3.2, color: "#0f172a", fillOpacity: 0.85 });
+        layer.setStyle({ weight: 3.2, color: "#0f172a", fillOpacity: 0.90 });
       } else {
         ccppLayer.resetStyle(layer);
+      }
+      if (selectedCcppLayer) {
+        updateMapInfo(selectedCcppLayer.feature.properties, true);
+      } else {
+        updateMapInfo(departmentStats, false);
       }
     },
     click: (e) => {
@@ -264,6 +271,7 @@ function selectCentroPobladoPolygon(feature, layer) {
   layer.bringToFront();
 
   const p = feature.properties;
+  updateMapInfo(p, true);
   const ccppName = (p.name || "").trim().toLowerCase();
   const districtName = (p.district_name || "").trim().toLowerCase();
   const ccppGeom = feature.geometry;
@@ -472,8 +480,8 @@ let maxCcppInvestment = 0;
 let selectedDistrictLayer = null;
 let currentDepartmentBounds = null;
 
-// Calibrated 6-step Hydro Blue Palette
-const concentrationColors = ["#f8fafc", "#e0f2fe", "#bae6fd", "#7dd3fc", "#38bdf8", "#0284c7"];
+// Calibrated 6-step Hydro Blue Palette (matches legend gradient)
+const concentrationColors = ["#bae6fd", "#7dd3fc", "#38bdf8", "#0284c7", "#0369a1", "#0c4a6e"];
 
 // Event Listeners for Layer Toggles & Washout Slider
 if (washoutSlider) {
@@ -502,12 +510,12 @@ if (waterStressToggle) {
   });
 }
 
-serviceAreaToggle.addEventListener("change", () => toggleLayer(serviceAreaToggle, serviceAreaLayer));
-continuityPointToggle.addEventListener("change", () => toggleLayer(continuityPointToggle, continuityPointLayer));
-continuityAreaToggle.addEventListener("change", () => toggleLayer(continuityAreaToggle, continuityAreaLayer));
-projectToggle.addEventListener("change", () => toggleLayer(projectToggle, projectLayer));
-districtToggle.addEventListener("change", () => toggleLayer(districtToggle, districtLayer));
-ccppToggle.addEventListener("change", () => toggleLayer(ccppToggle, ccppLayer));
+if (serviceAreaToggle) serviceAreaToggle.addEventListener("change", () => toggleLayer(serviceAreaToggle, serviceAreaLayer));
+if (continuityPointToggle) continuityPointToggle.addEventListener("change", () => toggleLayer(continuityPointToggle, continuityPointLayer));
+if (continuityAreaToggle) continuityAreaToggle.addEventListener("change", () => toggleLayer(continuityAreaToggle, continuityAreaLayer));
+if (projectToggle) projectToggle.addEventListener("change", () => toggleLayer(projectToggle, projectLayer));
+if (districtToggle) districtToggle.addEventListener("change", () => toggleLayer(districtToggle, districtLayer));
+if (ccppToggle) ccppToggle.addEventListener("change", () => toggleLayer(ccppToggle, ccppLayer));
 
 if (btnFitBounds) {
   btnFitBounds.addEventListener("click", () => {
@@ -789,40 +797,13 @@ function toggleLayer(toggle, layer) {
 }
 
 // -------------------------------------------------------------
-// PROJECTS (POINTS)
+// PROJECTS (DATASET REGISTRATION & LOCATED COUNT)
 // -------------------------------------------------------------
 function addProjects(collection) {
-  const located = collection.features.filter((item) => item.geometry);
-  located.forEach((item) => {
-    const p = item.properties;
-    
-    // Tiny jitter to visually separate overlapping points
-    const jitterLat = (Math.random() - 0.5) * 0.008;
-    const jitterLng = (Math.random() - 0.5) * 0.008;
-    
-    const marker = L.circleMarker([item.geometry.coordinates[1] + jitterLat, item.geometry.coordinates[0] + jitterLng], {
-      pane: 'projectsPane',
-      radius: 5.5, 
-      color: "#ffffff", 
-      weight: 1.5, 
-      fillColor: "#f97316", 
-      fillOpacity: 0.95,
-      className: "project-point-marker"
-    });
-    
-    marker.on("click", (e) => {
-      L.DomEvent.stopPropagation(e);
-      renderSingleProjectDetail(p);
-    });
-    
-    marker.bindTooltip(projectTooltip(p), {
-      sticky: true,
-      direction: "top",
-      className: "rich-tooltip",
-    });
-    marker.addTo(projectLayer);
-  });
-  return located.length;
+  // Los puntos circulares individuales se eliminan del mapa a solicitud del usuario.
+  // La interacción se concentra en los polígonos territoriales (tiles) y en el panel/modal de detalle.
+  if (projectLayer) projectLayer.clearLayers();
+  return (collection.features || []).filter((item) => item.geometry).length;
 }
 
 function projectTooltip(project) {
@@ -1023,25 +1004,27 @@ function projectCard(project, index = null) {
   const y3 = money(project.programmed_year_3);
 
   let rankBadge = "";
+  const rankNum = index !== null ? index + 1 : 1;
   if (index !== null) {
-    const rankNum = index + 1;
     const rankClass = rankNum === 1 ? "rank-top-1" : rankNum === 2 ? "rank-top-2" : rankNum === 3 ? "rank-top-3" : "";
     rankBadge = `<span class="rank-badge ${rankClass}" title="Ranking #${rankNum} por costo de inversión">#${rankNum}</span>`;
   }
 
   const hasGps = project.has_gps !== false && (project.has_gps === true || (project.geometry && project.geometry.coordinates));
   const geoBadge = hasGps 
-    ? `<span class="geo-badge geo-badge-gps" title="Proyecto con coordenadas georreferenciadas en el MEF (Punto en mapa)">📍 Geolocalizado</span>`
+    ? `<span class="geo-badge geo-badge-gps" title="Proyecto con coordenadas georreferenciadas en el MEF">📍 Geolocalizado</span>`
     : `<span class="geo-badge geo-badge-nogps" title="Este proyecto no tiene coordenadas GPS en la base oficial del MEF (Asignado por UBIGEO)">🏷️ Sin coordenadas GPS</span>`;
 
+  const cuiEscaped = escapeHtml(project.cui);
+
   return `
-    <article class="project-card">
+    <article class="project-card" onclick="openProjectModal('${cuiEscaped}', ${rankNum})">
       <div class="project-card-header">
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
           ${rankBadge}
-          <span class="cui-chip" onclick="copyCUI('${escapeHtml(project.cui)}', this)" title="Clic para copiar CUI">
+          <span class="cui-chip" onclick="event.stopPropagation(); copyCUI('${cuiEscaped}', this)" title="Clic para copiar CUI">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            CUI: ${escapeHtml(project.cui)}
+            CUI: ${cuiEscaped}
           </span>
           ${geoBadge}
         </div>
@@ -1088,6 +1071,11 @@ function projectCard(project, index = null) {
         <div><b>Fin:</b> ${escapeHtml(end)}</div>
         <div style="grid-column: span 2;"><b>EPS:</b> ${escapeHtml(project.provider_name || "Sin EPS asignada")}</div>
       </div>
+
+      <div class="btn-card-action">
+        <span>Ver Detalle Completo de la Inversión</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
     </article>
   `;
 }
@@ -1103,12 +1091,144 @@ function copyCUI(cui, element) {
 }
 
 function renderSingleProjectDetail(p) {
-  detail.innerHTML = `
-    <div class="project-list-wrapper">
-      ${projectCard(p)}
-    </div>
-  `;
+  openProjectModal(p.cui);
 }
+
+function openProjectModal(cui, rank = 1) {
+  const modal = document.getElementById("project-modal");
+  if (!modal) return;
+
+  const project = currentProjects.find(p => String(p.properties?.cui) === String(cui) || String(p.id) === String(cui))?.properties 
+    || currentSelectedDistrictProjects.find(p => String(p.cui) === String(cui));
+  
+  if (!project) return;
+
+  const cost = Number(project.updated_cost ?? project.cost ?? 0);
+  const executed = Number(project.executed_budget ?? project.executed ?? 0);
+  const finPercent = cost > 0 ? Math.min(100, (executed / cost) * 100).toFixed(1) : "0.0";
+  const physPercent = project.physical_progress != null ? parseFloat(project.physical_progress).toFixed(1) : "0.0";
+  const statusClass = getStatusClass(project.physical_status);
+
+  // Set Modal Header Badges
+  const rankEl = document.getElementById("modal-project-rank");
+  if (rankEl) {
+    rankEl.textContent = `#${rank}`;
+    rankEl.className = `rank-badge ${rank === 1 ? 'rank-top-1' : rank === 2 ? 'rank-top-2' : rank === 3 ? 'rank-top-3' : ''}`;
+  }
+
+  const cuiEl = document.getElementById("modal-project-cui");
+  if (cuiEl) {
+    cuiEl.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      CUI: ${escapeHtml(project.cui)}
+    `;
+    cuiEl.onclick = (e) => { e.stopPropagation(); copyCUI(String(project.cui), cuiEl); };
+  }
+
+  const geoBadgeEl = document.getElementById("modal-project-geobadge");
+  if (geoBadgeEl) {
+    const hasGps = project.has_gps !== false && (project.has_gps === true || (project.geometry && project.geometry.coordinates));
+    geoBadgeEl.textContent = hasGps ? "📍 Geolocalizado" : "🏷️ Sin coordenadas GPS (Asignado por UBIGEO)";
+    geoBadgeEl.className = `geo-badge ${hasGps ? 'geo-badge-gps' : 'geo-badge-nogps'}`;
+  }
+
+  const statusEl = document.getElementById("modal-project-status");
+  if (statusEl) {
+    statusEl.textContent = project.physical_status || "Sin estado";
+    statusEl.className = `badge-status-pill ${statusClass}`;
+  }
+
+  // Title
+  const titleEl = document.getElementById("modal-project-title");
+  if (titleEl) titleEl.textContent = project.name || "Sin nombre registrado";
+
+  // KPIs
+  const costEl = document.getElementById("modal-cost");
+  if (costEl) costEl.textContent = money(cost);
+  const execEl = document.getElementById("modal-executed");
+  if (execEl) execEl.textContent = money(executed);
+  const pimEl = document.getElementById("modal-pim");
+  if (pimEl) pimEl.textContent = money(project.programmed_year_0 ?? project.pim);
+
+  // Progress Bars
+  const physText = document.getElementById("modal-phys-text");
+  if (physText) physText.textContent = project.physical_progress != null ? `${project.physical_progress}%` : "Sin reporte";
+  const physBar = document.getElementById("modal-phys-bar");
+  if (physBar) {
+    physBar.style.width = `${Math.min(100, Math.max(0, parseFloat(physPercent)))}%`;
+    physBar.className = `progress-fill ${statusClass === 'good' ? 'fill-emerald' : statusClass === 'warning' ? 'fill-amber' : 'fill-slate'}`;
+  }
+
+  const finText = document.getElementById("modal-fin-text");
+  if (finText) finText.textContent = `${finPercent}%`;
+  const finBar = document.getElementById("modal-fin-bar");
+  if (finBar) finBar.style.width = `${Math.min(100, Math.max(0, parseFloat(finPercent)))}%`;
+
+  // Details
+  const snipEl = document.getElementById("modal-snip");
+  if (snipEl) snipEl.textContent = project.snip_code || "—";
+  const typEl = document.getElementById("modal-typology");
+  if (typEl) typEl.textContent = project.typology || "Agua y Saneamiento";
+  const entEl = document.getElementById("modal-entity");
+  if (entEl) entEl.textContent = project.provider_name || project.entity || "Sin entidad identificada";
+  const benEl = document.getElementById("modal-beneficiaries");
+  if (benEl) benEl.textContent = project.beneficiaries ? `${number(project.beneficiaries)} habitantes` : "No registrado";
+  
+  const dep = project.department_name || select.options[select.selectedIndex]?.text || "—";
+  const prov = project.province || "—";
+  const dist = project.district_name || project.district || "—";
+  const locEl = document.getElementById("modal-location");
+  if (locEl) locEl.textContent = `${dep} > ${prov} > ${dist}`;
+
+  const coords = project.geometry?.coordinates;
+  const coordsEl = document.getElementById("modal-coords-info");
+  if (coordsEl) coordsEl.textContent = coords ? `Lat: ${coords[1].toFixed(5)}, Lon: ${coords[0].toFixed(5)}` : "Referencia distrital UBIGEO";
+
+  const dtStart = document.getElementById("modal-date-start");
+  if (dtStart) dtStart.textContent = formatDate(project.start_date);
+  const dtEnd = document.getElementById("modal-date-end");
+  if (dtEnd) dtEnd.textContent = formatDate(project.end_date);
+  const dtRep = document.getElementById("modal-date-report");
+  if (dtRep) dtRep.textContent = formatDateTime(project.report_date || project.physical_report_date);
+
+  // PMI
+  const pmi1 = document.getElementById("modal-pmi-1");
+  if (pmi1) pmi1.textContent = money(project.programmed_year_1 ?? project.prog_year_1);
+  const pmi2 = document.getElementById("modal-pmi-2");
+  if (pmi2) pmi2.textContent = money(project.programmed_year_2 ?? project.prog_year_2);
+  const pmi3 = document.getElementById("modal-pmi-3");
+  if (pmi3) pmi3.textContent = money(project.programmed_year_3 ?? project.prog_year_3);
+  const pmi4 = document.getElementById("modal-pmi-4");
+  if (pmi4) pmi4.textContent = money(project.programmed_year_4 ?? project.prog_year_4);
+
+  modal.hidden = false;
+  document.body.style.overflow = "hidden";
+}
+
+function closeProjectModal() {
+  const modal = document.getElementById("project-modal");
+  if (modal) {
+    modal.hidden = true;
+    document.body.style.overflow = "";
+  }
+}
+
+// Modal listeners
+document.addEventListener("DOMContentLoaded", () => {
+  const closeBtn = document.getElementById("btn-close-modal");
+  if (closeBtn) closeBtn.addEventListener("click", closeProjectModal);
+
+  const modal = document.getElementById("project-modal");
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeProjectModal();
+    });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeProjectModal();
+  });
+});
 
 let cachedDepartmentsGeoJSON = null;
 let cachedWaterStressGeoJSON = null;
@@ -1213,7 +1333,7 @@ async function loadDepartment(slug, updateUrl = true) {
     }
     
     updateSummary(stats);
-    updateMapInfo(department, stats);
+    updateMapInfo({ name: department.name, ...stats }, false);
     
     if (districtLayer.getLayers().length > 0) {
       currentDepartmentBounds = districtLayer.getBounds();
@@ -1235,11 +1355,43 @@ async function loadDepartment(slug, updateUrl = true) {
   }
 }
 
-function updateMapInfo(department, stats) {
-  mapInfoDepartment.textContent = department.name.charAt(0) + department.name.slice(1).toLowerCase();
-  mapInfoProjects.textContent = number(stats.projects);
-  mapInfoInvestment.textContent = mapMoney(stats.total_investment);
-  mapInfoExecuted.textContent = mapMoney(stats.total_executed);
+function updateMapInfo(entity, isCcpp = false) {
+  if (!entity) return;
+  const headerTitle = document.getElementById("map-info-header-title");
+  const ccppBox = document.getElementById("map-info-ccpp-indicators");
+  const aguaSpan = document.getElementById("map-info-ccpp-agua");
+  const sanSpan = document.getElementById("map-info-ccpp-saneamiento");
+
+  if (isCcpp) {
+    if (headerTitle) {
+      headerTitle.innerHTML = `CP: <span id="map-info-department" class="text-primary">${escapeHtml(entity.name || "Centro Poblado")}</span>`;
+    } else if (mapInfoDepartment) {
+      mapInfoDepartment.textContent = entity.name || "Centro Poblado";
+    }
+    
+    if (mapInfoProjects) mapInfoProjects.textContent = number(entity.total_projects ?? entity.projects ?? 0);
+    if (mapInfoInvestment) mapInfoInvestment.textContent = mapMoney(entity.total_investment ?? entity.monto_planificado ?? 0);
+    if (mapInfoExecuted) mapInfoExecuted.textContent = mapMoney(entity.total_executed ?? entity.monto_invertido ?? 0);
+    
+    if (ccppBox) {
+      ccppBox.hidden = false;
+      if (aguaSpan) aguaSpan.textContent = entity.pvs_agua_red != null ? `${Number(entity.pvs_agua_red).toFixed(1)}%` : "—";
+      if (sanSpan) sanSpan.textContent = entity.pvs_sin_saneamiento != null ? `${Number(entity.pvs_sin_saneamiento).toFixed(1)}%` : "—";
+    }
+  } else {
+    const deptName = entity.name ? (entity.name.charAt(0) + entity.name.slice(1).toLowerCase()) : "—";
+    if (headerTitle) {
+      headerTitle.innerHTML = `Resumen: <span id="map-info-department" class="text-primary">${escapeHtml(deptName)}</span>`;
+    } else if (mapInfoDepartment) {
+      mapInfoDepartment.textContent = deptName;
+    }
+    
+    if (mapInfoProjects) mapInfoProjects.textContent = number(entity.projects ?? entity.total_projects ?? 0);
+    if (mapInfoInvestment) mapInfoInvestment.textContent = mapMoney(entity.total_investment ?? 0);
+    if (mapInfoExecuted) mapInfoExecuted.textContent = mapMoney(entity.total_executed ?? 0);
+    
+    if (ccppBox) ccppBox.hidden = true;
+  }
 }
 
 // App Bootstrap

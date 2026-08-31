@@ -58,25 +58,32 @@
   <main class="layout">
     <!-- Left Sidebar: KPIs, Capas y Leyendas -->
     <aside class="left-sidebar" aria-label="Panel de capas y resumen">
-      <!-- Resumen Departamental -->
-      <section id="map-info-panel" class="panel-section dept-summary-card" aria-label="Resumen departamental">
+      <!-- Resumen de Centro Poblado / Departamental -->
+      <section id="map-info-panel" class="panel-section dept-summary-card" aria-label="Resumen de centro poblado o departamental">
         <div class="section-header">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-          <h2>Resumen: <span id="map-info-department" class="text-primary">—</span></h2>
+          <h2 id="map-info-header-title">Centro Poblado: <span id="map-info-department" class="text-primary">—</span></h2>
         </div>
         
         <div class="kpi-stack">
           <div class="kpi-card">
-            <span class="kpi-label">Proyectos Registrados</span>
+            <span id="map-info-label-projects" class="kpi-label">Proyectos Registrados</span>
             <strong id="map-info-projects" class="kpi-value">—</strong>
           </div>
           <div class="kpi-card highlight-cyan">
-            <span class="kpi-label">Inversión Total Referencial</span>
+            <span class="kpi-label">Inversión Planificada</span>
             <strong id="map-info-investment" class="kpi-value font-mono">—</strong>
           </div>
           <div class="kpi-card highlight-emerald">
             <span class="kpi-label">Presupuesto Devengado</span>
             <strong id="map-info-executed" class="kpi-value font-mono">—</strong>
+          </div>
+          <div id="map-info-ccpp-indicators" class="kpi-card highlight-amber" hidden>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+              <span>Agua Red: <strong id="map-info-ccpp-agua" class="text-primary font-mono">—</strong></span>
+              <span>Sin Saneam.: <strong id="map-info-ccpp-saneamiento" class="text-danger font-mono">—</strong></span>
+            </div>
+            <div style="font-size: 10px; color: var(--text-muted); text-align: center;">Indicadores Censales INEI</div>
           </div>
         </div>
       </section>
@@ -104,10 +111,10 @@
 
           <label class="custom-switch-label">
             <span class="layer-info">
-              <span class="layer-indicator dot-orange"></span>
-              <span class="layer-name">Proyectos de Inversión</span>
+              <span class="layer-indicator dot-purple"></span>
+              <span class="layer-name">Centros Poblados (GeoPerú)</span>
             </span>
-            <input type="checkbox" id="project-toggle" checked>
+            <input type="checkbox" id="ccpp-toggle" checked>
             <span class="switch-slider"></span>
           </label>
 
@@ -153,15 +160,6 @@
               <span class="layer-name">Estrés Hídrico 2050 (WRI Aqueduct)</span>
             </span>
             <input type="checkbox" id="water-stress-toggle">
-            <span class="switch-slider"></span>
-          </label>
-
-          <label class="custom-switch-label">
-            <span class="layer-info">
-              <span class="layer-indicator dot-purple"></span>
-              <span class="layer-name">Centros Poblados (GeoPerú)</span>
-            </span>
-            <input type="checkbox" id="ccpp-toggle">
             <span class="switch-slider"></span>
           </label>
         </div>
@@ -347,10 +345,135 @@
     </aside>
   </main>
 
+  <!-- Modal / Drawer de Detalle Completo de Proyecto de Inversión -->
+  <div id="project-modal" class="project-modal-backdrop" hidden>
+    <div class="project-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-project-title">
+      <div class="project-modal-header">
+        <div class="modal-badge-group">
+          <span id="modal-project-rank" class="rank-badge rank-top-1">#1</span>
+          <span id="modal-project-cui" class="cui-chip" title="Clic para copiar CUI">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            CUI: —
+          </span>
+          <span id="modal-project-geobadge" class="geo-badge geo-badge-gps">📍 Geolocalizado</span>
+          <span id="modal-project-status" class="badge-status-pill good">En Ejecución</span>
+        </div>
+        <button type="button" id="btn-close-modal" class="modal-close-btn" aria-label="Cerrar modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="6"></line></svg>
+        </button>
+      </div>
+
+      <div class="project-modal-body">
+        <h2 id="modal-project-title" class="modal-project-title">—</h2>
+
+        <!-- Financial KPI Trio -->
+        <div class="modal-kpi-grid">
+          <div class="modal-kpi-card highlight-cyan">
+            <span class="modal-kpi-label">Monto Planificado (Costo Total)</span>
+            <strong id="modal-cost" class="modal-kpi-val font-mono">S/ 0</strong>
+          </div>
+          <div class="modal-kpi-card highlight-emerald">
+            <span class="modal-kpi-label">Monto Invertido (Devengado)</span>
+            <strong id="modal-executed" class="modal-kpi-val font-mono">S/ 0</strong>
+          </div>
+          <div class="modal-kpi-card">
+            <span class="modal-kpi-label">PIM 2026 (Presupuesto Anual)</span>
+            <strong id="modal-pim" class="modal-kpi-val font-mono">S/ 0</strong>
+          </div>
+        </div>
+
+        <!-- Progress Bars -->
+        <div class="modal-progress-section">
+          <div class="modal-progress-item">
+            <div class="modal-progress-header">
+              <span>Avance Físico de Obra</span>
+              <strong id="modal-phys-text">0.0%</strong>
+            </div>
+            <div class="progress-track">
+              <div id="modal-phys-bar" class="progress-fill fill-emerald" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="modal-progress-item">
+            <div class="modal-progress-header">
+              <span>Avance Financiero Ejecutado</span>
+              <strong id="modal-fin-text">0.0%</strong>
+            </div>
+            <div class="progress-track">
+              <div id="modal-fin-bar" class="progress-fill fill-cyan" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Attributes Grid -->
+        <div class="modal-details-grid">
+          <div class="modal-detail-item">
+            <span class="detail-label">Código SNIP</span>
+            <strong id="modal-snip">—</strong>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Tipología de Proyecto</span>
+            <strong id="modal-typology">—</strong>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Entidad Ejecutora / Operador</span>
+            <strong id="modal-entity">—</strong>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Beneficiarios Estimados</span>
+            <strong id="modal-beneficiaries">—</strong>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Ubicación Territorial</span>
+            <strong id="modal-location">—</strong>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Georreferenciación</span>
+            <strong id="modal-coords-info">—</strong>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Fecha Viabilidad / Inicio</span>
+            <strong id="modal-date-start">—</strong>
+          </div>
+          <div class="modal-detail-item">
+            <span class="detail-label">Fecha Fin Prevista</span>
+            <strong id="modal-date-end">—</strong>
+          </div>
+          <div class="modal-detail-item full-width">
+            <span class="detail-label">Último Reporte SSI (Seguimiento MEF)</span>
+            <strong id="modal-date-report">—</strong>
+          </div>
+        </div>
+
+        <!-- Multi-Year Programming (PMI) -->
+        <div class="modal-pmi-section">
+          <h3 class="modal-section-title">Programación Multianual de Inversiones (PMI)</h3>
+          <div class="modal-pmi-grid">
+            <div class="pmi-card">
+              <span class="pmi-year">Año 1</span>
+              <strong id="modal-pmi-1" class="font-mono">S/ 0</strong>
+            </div>
+            <div class="pmi-card">
+              <span class="pmi-year">Año 2</span>
+              <strong id="modal-pmi-2" class="font-mono">S/ 0</strong>
+            </div>
+            <div class="pmi-card">
+              <span class="pmi-year">Año 3</span>
+              <strong id="modal-pmi-3" class="font-mono">S/ 0</strong>
+            </div>
+            <div class="pmi-card">
+              <span class="pmi-year">Año 4</span>
+              <strong id="modal-pmi-4" class="font-mono">S/ 0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Leaflet JS, MapLibre GL JS & Leaflet-MapLibre Adapter -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.21/leaflet-maplibre-gl.js"></script>
-  <script src="{% static 'app.js' %}?v=28"></script>
+  <script src="{% static 'app.js' %}?v=30"></script>
 </body>
 </html>

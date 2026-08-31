@@ -1277,3 +1277,286 @@ select#department-select:disabled {
   color: #d97706;
   border: 1px solid rgba(245, 158, 11, 0.28);
 }
+
+/* ==========================================================================
+   Interactive Project Card
+   ========================================================================== */
+.project-card {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--hydro-primary);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.12);
+}
+
+.btn-card-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--hydro-primary);
+}
+
+.fill-cyan {
+  background: linear-gradient(90deg, #06b6d4, #0284c7);
+}
+
+/* ==========================================================================
+   Project Detail Modal / Slide-over Drawer
+   ========================================================================== */
+.project-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeInModal 0.2s ease-out;
+}
+
+.project-modal-backdrop[hidden] {
+  display: none !important;
+}
+
+.project-modal-dialog {
+  background: var(--surface);
+  border-radius: 14px;
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.35);
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: scaleInModal 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.project-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--canvas-bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.modal-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  background: #e2e8f0;
+  color: var(--text-main);
+}
+
+.project-modal-body {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-project-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.modal-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.modal-kpi-card {
+  background: var(--canvas-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modal-kpi-card.highlight-cyan {
+  border-left: 3.5px solid var(--hydro-primary);
+}
+
+.modal-kpi-card.highlight-emerald {
+  border-left: 3.5px solid var(--status-emerald);
+}
+
+.modal-kpi-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.modal-kpi-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.modal-progress-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  background: var(--canvas-bg);
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+}
+
+.modal-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.modal-progress-header span {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.modal-progress-header strong {
+  font-family: var(--font-mono);
+  color: var(--text-main);
+}
+
+.modal-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.modal-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.modal-detail-item.full-width {
+  grid-column: span 2;
+}
+
+.modal-detail-item .detail-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.modal-detail-item strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.modal-pmi-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-section-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+}
+
+.modal-pmi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.pmi-card {
+  background: var(--canvas-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pmi-year {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--hydro-primary);
+  text-transform: uppercase;
+}
+
+.pmi-card strong {
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleInModal {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .modal-kpi-grid,
+  .modal-progress-section,
+  .modal-details-grid {
+    grid-template-columns: 1fr;
+  }
+  .modal-detail-item.full-width {
+    grid-column: span 1;
+  }
+  .modal-pmi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
