@@ -792,6 +792,7 @@ function onContinuityArea(feature, layer) {
 }
 
 function toggleLayer(toggle, layer) {
+  if (!toggle || !layer) return;
   if (toggle.checked) layer.addTo(map);
   else map.removeLayer(layer);
 }
@@ -1072,10 +1073,10 @@ function projectCard(project, index = null) {
         <div style="grid-column: span 2;"><b>EPS:</b> ${escapeHtml(project.provider_name || "Sin EPS asignada")}</div>
       </div>
 
-      <div class="btn-card-action">
+      <button type="button" class="btn-card-action" onclick="event.stopPropagation(); window.openProjectModal('${cuiEscaped}', ${rankNum})">
         <span>Ver Detalle Completo de la Inversión</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </div>
+      </button>
     </article>
   `;
 }
@@ -1098,9 +1099,25 @@ function openProjectModal(cui, rank = 1) {
   const modal = document.getElementById("project-modal");
   if (!modal) return;
 
-  const project = currentProjects.find(p => String(p.properties?.cui) === String(cui) || String(p.id) === String(cui))?.properties 
-    || currentSelectedDistrictProjects.find(p => String(p.cui) === String(cui));
-  
+  const cleanCui = String(cui).trim();
+  let project = null;
+
+  if (currentProjects && currentProjects.length > 0) {
+    const found = currentProjects.find(p => {
+      const item = p.properties || p;
+      return String(item.cui).trim() === cleanCui || String(p.id).trim() === cleanCui;
+    });
+    if (found) project = found.properties || found;
+  }
+
+  if (!project && currentSelectedDistrictProjects && currentSelectedDistrictProjects.length > 0) {
+    const found = currentSelectedDistrictProjects.find(p => {
+      const item = p.properties || p;
+      return String(item.cui).trim() === cleanCui || String(p.id).trim() === cleanCui;
+    });
+    if (found) project = found.properties || found;
+  }
+
   if (!project) return;
 
   const cost = Number(project.updated_cost ?? project.cost ?? 0);
@@ -1213,21 +1230,24 @@ function closeProjectModal() {
   }
 }
 
-// Modal listeners
-document.addEventListener("DOMContentLoaded", () => {
-  const closeBtn = document.getElementById("btn-close-modal");
-  if (closeBtn) closeBtn.addEventListener("click", closeProjectModal);
+// Global Exports
+window.openProjectModal = openProjectModal;
+window.closeProjectModal = closeProjectModal;
+window.copyCUI = copyCUI;
 
-  const modal = document.getElementById("project-modal");
-  if (modal) {
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeProjectModal();
-    });
-  }
+// Attach Modal Listeners
+const modalCloseBtn = document.getElementById("btn-close-modal");
+if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeProjectModal);
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeProjectModal();
+const projectModalEl = document.getElementById("project-modal");
+if (projectModalEl) {
+  projectModalEl.addEventListener("click", (e) => {
+    if (e.target === projectModalEl) closeProjectModal();
   });
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeProjectModal();
 });
 
 let cachedDepartmentsGeoJSON = null;
@@ -1321,7 +1341,6 @@ async function loadDepartment(slug, updateUrl = true) {
     
     ccppLayer.clearLayers().addData(centrosPoblados);
     
-    toggleLayer(projectToggle, projectLayer);
     toggleLayer(districtToggle, districtLayer);
     toggleLayer(serviceAreaToggle, serviceAreaLayer);
     toggleLayer(continuityPointToggle, continuityPointLayer);

@@ -1293,15 +1293,36 @@ select#department-select:disabled {
 }
 
 .btn-card-action {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-subtle);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--hydro-primary);
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--hydro-primary-light);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--hydro-primary-dark);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-card-action:hover {
+  background: var(--hydro-primary);
+  color: #ffffff;
+  border-color: var(--hydro-primary);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+}
+
+.btn-card-action svg {
+  transition: transform 0.15s ease;
+}
+
+.btn-card-action:hover svg {
+  transform: translateX(3px);
 }
 
 .fill-cyan {
